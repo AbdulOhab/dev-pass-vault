@@ -263,6 +263,9 @@
 .dpv-submit-btn { background: var(--dpv-btn); color: #fff; }
 .dpv-submit-btn:hover { background: var(--dpv-btn-h); }
 
+.dpv-edit-btn { background: var(--dpv-bg2); color: var(--dpv-text2); padding: 5px 8px; }
+.dpv-edit-btn:hover { background: var(--dpv-border2); color: var(--dpv-text1); }
+
 .dpv-icon-btn {
   width: 26px;
   height: 26px;
@@ -381,6 +384,9 @@
 
 .dpv-save-cred-btn { background: var(--dpv-btn); color: #fff; }
 .dpv-save-cred-btn:hover { background: var(--dpv-btn-h); }
+
+.dpv-delete-cred-btn { background: #7f1d1d; color: #fca5a5; }
+.dpv-delete-cred-btn:hover { background: #991b1b; }
 
 .dpv-cancel-btn { background: var(--dpv-bg2); color: var(--dpv-text3); }
 .dpv-cancel-btn:hover { background: var(--dpv-border2); color: var(--dpv-text1); }

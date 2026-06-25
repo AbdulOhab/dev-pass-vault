@@ -207,19 +207,22 @@
     const item = document.createElement('div');
     item.className = 'dpv-item';
 
+    const noteIcon = cred.notes ? ' 📝' : '';
     item.innerHTML = `
       <div class="dpv-item-info">
-        <span class="dpv-item-label">${escHtml(cred.label || cred.username)}</span>
+        <span class="dpv-item-label">${escHtml(cred.label || cred.username)}${noteIcon}</span>
         <span class="dpv-item-user">${escHtml(cred.username)}</span>
         ${cred.tags?.length ? `<span class="dpv-tags">${cred.tags.map(t => `<span class="dpv-tag">${escHtml(t)}</span>`).join('')}</span>` : ''}
       </div>
       <div class="dpv-item-btns">
         <button class="dpv-btn dpv-fill-btn" title="Fill form">Fill</button>
         <button class="dpv-btn dpv-submit-btn" title="Fill &amp; Submit">Fill+Go</button>
+        <button class="dpv-btn dpv-edit-btn" title="Edit">✎</button>
       </div>`;
 
     item.querySelector('.dpv-fill-btn').addEventListener('click', () => fillCredential(cred, false));
     item.querySelector('.dpv-submit-btn').addEventListener('click', () => fillCredential(cred, true));
+    item.querySelector('.dpv-edit-btn').addEventListener('click', () => openCredDialog(cred));
 
     return item;
   }
@@ -259,79 +262,88 @@
     leaveTimer = setTimeout(closePanel, 300);
   }
 
-  // ── Add dialog (inline in the panel) ─────────────────────────────────────
-  function openAddDialog() {
+  // ── Add / Edit dialog (inline in the panel) ──────────────────────────────
+  function openAddDialog() { openCredDialog(null); }
+
+  function openCredDialog(existingCred) {
     if (!panel) return;
     const existing = panel.querySelector('.dpv-add-dialog');
-    if (existing) { existing.remove(); return; }
+    if (existing) { existing.remove(); if (!existingCred) return; }
 
+    const isEdit = !!existingCred;
     const currentDomain = location.hostname + (location.port ? `:${location.port}` : '');
-    const currentUrl = location.href;
 
     const dialog = document.createElement('div');
     dialog.className = 'dpv-add-dialog';
+
     dialog.innerHTML = `
-      <div class="dpv-dialog-title">Add Credential</div>
-      <label>Label<input class="dpv-input" name="label" placeholder="e.g. Dev Admin" /></label>
-      <label>Username / Email<input class="dpv-input" name="username" placeholder="user@example.com" /></label>
-      <label>Password<input class="dpv-input" name="password" type="password" placeholder="••••••••" /></label>
-      <label>Notes<input class="dpv-input" name="notes" placeholder="optional" /></label>
-      <label>Tags (comma separated)<input class="dpv-input" name="tags" placeholder="dev, admin" /></label>
+      <div class="dpv-dialog-title">${isEdit ? '✎ Edit Credential' : 'Add Credential'}</div>
+      <label>Label<input class="dpv-input" name="label" placeholder="e.g. Dev Admin" value="${escHtml(existingCred?.label || '')}" /></label>
+      <label>Username / Email<input class="dpv-input" name="username" placeholder="user@example.com" value="${escHtml(existingCred?.username || '')}" /></label>
+      <label>Password
+        <div style="position:relative">
+          <input class="dpv-input dpv-pw-input" name="password" type="password" placeholder="••••••••" value="${escHtml(existingCred?.password || '')}" style="padding-right:32px" />
+          <button class="dpv-pw-eye" type="button" title="Show/hide" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:13px;color:var(--dpv-text2)">👁</button>
+        </div>
+      </label>
+      <label>Tags (comma separated)<input class="dpv-input" name="tags" placeholder="dev, admin" value="${escHtml((existingCred?.tags || []).join(', '))}" /></label>
+      <label>Notes<input class="dpv-input" name="notes" placeholder="optional" value="${escHtml(existingCred?.notes || '')}" /></label>
       <div class="dpv-url-rules-header">
         <span>URL Rules</span>
         <button class="dpv-icon-btn dpv-add-rule-btn" title="Add rule">+</button>
       </div>
-      <div class="dpv-url-rules-list">
-        <div class="dpv-url-rule-row">
-          <select class="dpv-select dpv-rule-type">
-            <option value="domain">Domain</option>
-            <option value="exact">Exact URL</option>
-            <option value="prefix">Prefix</option>
-            <option value="contains">Contains</option>
-            <option value="wildcard">Wildcard</option>
-          </select>
-          <input class="dpv-input dpv-rule-pattern" value="${escHtml(currentDomain)}" placeholder="pattern" />
-          <button class="dpv-icon-btn dpv-remove-rule" title="Remove">✕</button>
-        </div>
-      </div>
+      <div class="dpv-url-rules-list"></div>
       <div class="dpv-dialog-footer">
-        <button class="dpv-btn dpv-save-cred-btn">Save</button>
+        <button class="dpv-btn dpv-save-cred-btn">${isEdit ? 'Update' : 'Save'}</button>
+        ${isEdit ? '<button class="dpv-btn dpv-delete-cred-btn">Delete</button>' : ''}
         <button class="dpv-btn dpv-cancel-btn">Cancel</button>
       </div>`;
 
-    // Add URL rule row
-    dialog.querySelector('.dpv-add-rule-btn').addEventListener('click', () => {
-      const ruleList = dialog.querySelector('.dpv-url-rules-list');
-      const row = document.createElement('div');
-      row.className = 'dpv-url-rule-row';
-      row.innerHTML = `
-        <select class="dpv-select dpv-rule-type">
-          <option value="domain">Domain</option>
-          <option value="exact">Exact URL</option>
-          <option value="prefix">Prefix</option>
-          <option value="contains">Contains</option>
-          <option value="wildcard">Wildcard</option>
-        </select>
-        <input class="dpv-input dpv-rule-pattern" value="${escHtml(currentUrl)}" placeholder="pattern" />
-        <button class="dpv-icon-btn dpv-remove-rule" title="Remove">✕</button>`;
-      row.querySelector('.dpv-remove-rule').addEventListener('click', () => row.remove());
-      ruleList.appendChild(row);
+    // Populate URL rule rows
+    const ruleList = dialog.querySelector('.dpv-url-rules-list');
+    const rulesToShow = existingCred?.urlRules?.length
+      ? existingCred.urlRules
+      : [{ type: 'domain', pattern: currentDomain }];
+    rulesToShow.forEach(r => addRuleRowToDialog(ruleList, r.pattern, r.type));
+
+    // Password toggle
+    dialog.querySelector('.dpv-pw-eye').addEventListener('click', () => {
+      const pw = dialog.querySelector('.dpv-pw-input');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
     });
 
-    // Remove first rule button
-    dialog.querySelector('.dpv-remove-rule').addEventListener('click', e => {
-      e.target.closest('.dpv-url-rule-row').remove();
+    // Add rule button
+    dialog.querySelector('.dpv-add-rule-btn').addEventListener('click', () => {
+      addRuleRowToDialog(ruleList, location.href, 'exact');
     });
 
     dialog.querySelector('.dpv-cancel-btn').addEventListener('click', () => dialog.remove());
-    dialog.querySelector('.dpv-save-cred-btn').addEventListener('click', () => saveCred(dialog));
+    dialog.querySelector('.dpv-save-cred-btn').addEventListener('click', () => saveCred(dialog, existingCred?.id));
+    dialog.querySelector('.dpv-delete-cred-btn')?.addEventListener('click', () => deleteCred(dialog, existingCred.id, existingCred.label || existingCred.username));
 
     panel.insertBefore(dialog, panel.querySelector('.dpv-list'));
   }
 
-  async function saveCred(dialog) {
+  function addRuleRowToDialog(ruleList, pattern = '', type = 'domain') {
+    const TYPES = ['domain','exact','prefix','contains','wildcard'];
+    const LABELS = { domain:'Domain', exact:'Exact URL', prefix:'Prefix', contains:'Contains', wildcard:'Wildcard' };
+    const row = document.createElement('div');
+    row.className = 'dpv-url-rule-row';
+    row.innerHTML = `
+      <select class="dpv-select dpv-rule-type">
+        ${TYPES.map(t => `<option value="${t}"${t === type ? ' selected' : ''}>${LABELS[t]}</option>`).join('')}
+      </select>
+      <input class="dpv-input dpv-rule-pattern" value="${escHtml(pattern)}" placeholder="pattern" />
+      <button class="dpv-icon-btn dpv-remove-rule" title="Remove">✕</button>`;
+    row.querySelector('.dpv-remove-rule').addEventListener('click', () => {
+      row.remove();
+      if (!ruleList.children.length) addRuleRowToDialog(ruleList);
+    });
+    ruleList.appendChild(row);
+  }
+
+  async function saveCred(dialog, existingId) {
     const get = name => dialog.querySelector(`[name="${name}"]`)?.value.trim() || '';
-    const label = get('label');
     const username = get('username');
     const password = get('password');
     if (!username || !password) {
@@ -339,36 +351,30 @@
       return;
     }
 
-    const tags = get('tags')
-      .split(',')
-      .map(t => t.trim())
-      .filter(Boolean);
-
+    const tags = get('tags').split(',').map(t => t.trim()).filter(Boolean);
     const urlRules = Array.from(dialog.querySelectorAll('.dpv-url-rule-row'))
       .map(row => ({
-        type: row.querySelector('.dpv-rule-type').value,
+        type:    row.querySelector('.dpv-rule-type').value,
         pattern: row.querySelector('.dpv-rule-pattern').value.trim(),
       }))
       .filter(r => r.pattern);
 
-    const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const id = existingId || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
       const r = (Math.random() * 16) | 0;
       return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
     });
-    const cred = {
-      id,
-      label: label || username,
-      username,
-      password,
-      notes: get('notes'),
-      tags,
-      urlRules,
-      autoSubmit: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
 
-    await chrome.runtime.sendMessage({ type: 'SAVE', credential: cred });
+    await chrome.runtime.sendMessage({ type: 'SAVE', credential: {
+      id, label: get('label') || username, username, password,
+      notes: get('notes'), tags, urlRules, autoSubmit: false,
+    }});
+    await refreshCredentials();
+    renderPanel();
+  }
+
+  async function deleteCred(dialog, id, name) {
+    if (!confirm(`Delete "${name}"?`)) return;
+    await chrome.runtime.sendMessage({ type: 'DELETE', id });
     await refreshCredentials();
     renderPanel();
   }
