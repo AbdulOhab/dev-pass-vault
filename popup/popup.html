@@ -37,10 +37,10 @@
       </div>
     </header>
 
-    <!-- ── Add form (shown/hidden) ── -->
+    <!-- ── Add / Edit form (shown/hidden) ── -->
     <div id="add-form" class="add-form hidden">
       <div class="add-form-title">
-        <span>New Credential</span>
+        <span id="form-title">New Credential</span>
         <button id="add-form-close" class="icon-btn-sm" title="Cancel">✕</button>
       </div>
 
@@ -68,21 +68,16 @@
         <textarea id="f-notes" class="field-input field-textarea" rows="2" placeholder="Optional notes…"></textarea>
       </div>
       <div class="form-row">
-        <label class="field-label">URL Rule</label>
-        <div class="url-rule-row">
-          <select id="f-rule-type" class="field-select">
-            <option value="domain">Domain</option>
-            <option value="exact">Exact URL</option>
-            <option value="prefix">Prefix</option>
-            <option value="contains">Contains</option>
-            <option value="wildcard">Wildcard</option>
-          </select>
-          <input id="f-rule-pattern" class="field-input" type="text" placeholder="e.g. localhost:3000" />
+        <div class="url-rules-header">
+          <label class="field-label" style="margin:0">URL Rules</label>
+          <button id="f-add-rule" class="icon-btn-sm" title="Add rule" style="font-size:15px;width:20px;height:20px">+</button>
         </div>
+        <div id="f-rules-list"></div>
       </div>
 
       <div class="add-form-footer">
         <button id="f-save" class="btn btn-primary">Save</button>
+        <button id="f-delete" class="btn btn-danger hidden">Delete</button>
         <button id="f-cancel" class="btn btn-ghost">Cancel</button>
       </div>
       <div id="f-error" class="form-error hidden"></div>

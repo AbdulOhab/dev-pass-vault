@@ -346,6 +346,27 @@ body {
 }
 .field-select:focus { border-color: var(--border-focus); }
 
+.url-rules-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+#f-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.url-rule-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.url-rule-row .rule-pattern { flex: 1; }
+.url-rule-row .rule-remove  { flex-shrink: 0; }
+
 .add-form-footer {
   display: flex;
   gap: 6px;
@@ -353,6 +374,15 @@ body {
 }
 .add-form-footer .btn-primary { flex: 1; padding: 7px; font-size: 12px; }
 .add-form-footer .btn-ghost   { flex: 1; padding: 7px; font-size: 12px; }
+.add-form-footer .btn-danger  { flex: 1; padding: 7px; font-size: 12px; }
+
+.btn-danger {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+.btn-danger:hover { background: #991b1b; }
+[data-theme="light"] .btn-danger { background: #fee2e2; color: #b91c1c; }
+[data-theme="light"] .btn-danger:hover { background: #fecaca; }
 
 .form-error {
   font-size: 11px;

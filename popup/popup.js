@@ -3,6 +3,7 @@ const msg = (payload) => chrome.runtime.sendMessage(payload);
 let allCreds = [];
 let currentUrl = '';
 let currentTheme = 'dark';
+let editingCredId = null; // null = add mode, string = edit mode
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
@@ -48,13 +49,22 @@ async function init() {
   initAddForm();
 }
 
-// ── Add form ───────────────────────────────────────────────────────────────
+// ── Add / Edit form ────────────────────────────────────────────────────────
+const RULE_TYPES = [
+  { value: 'domain',   label: 'Domain' },
+  { value: 'exact',    label: 'Exact' },
+  { value: 'prefix',   label: 'Prefix' },
+  { value: 'contains', label: 'Contains' },
+  { value: 'wildcard', label: 'Wildcard' },
+];
+
 function initAddForm() {
   document.getElementById('add-form-close').addEventListener('click', closeAddForm);
   document.getElementById('f-cancel').addEventListener('click', closeAddForm);
-  document.getElementById('f-save').addEventListener('click', saveNewCred);
+  document.getElementById('f-save').addEventListener('click', saveForm);
+  document.getElementById('f-delete').addEventListener('click', deleteCred);
+  document.getElementById('f-add-rule').addEventListener('click', () => addRuleRow());
 
-  // password eye toggle
   document.querySelector('.pw-eye').addEventListener('click', () => {
     const pw = document.getElementById('f-password');
     pw.type = pw.type === 'password' ? 'text' : 'password';
@@ -62,34 +72,67 @@ function initAddForm() {
 }
 
 function openAddForm() {
-  const form = document.getElementById('add-form');
-  form.classList.remove('hidden');
+  editingCredId = null;
+  document.getElementById('form-title').textContent = 'New Credential';
+  document.getElementById('f-delete').classList.add('hidden');
+  clearFormFields();
 
-  // pre-fill URL rule with current tab's domain
+  // pre-fill first URL rule with current tab's domain
   if (currentUrl) {
     try {
       const u = new URL(currentUrl);
-      document.getElementById('f-rule-pattern').value =
-        u.hostname + (u.port ? `:${u.port}` : '');
-    } catch (_) {}
+      addRuleRow({ type: 'domain', pattern: u.hostname + (u.port ? `:${u.port}` : '') });
+    } catch (_) { addRuleRow(); }
+  } else {
+    addRuleRow();
   }
 
-  document.getElementById('f-username').focus();
+  showForm();
+}
+
+function openEditForm(credId) {
+  const cred = allCreds.find(c => c.id === credId);
+  if (!cred) return;
+
+  editingCredId = credId;
+  document.getElementById('form-title').textContent = 'Edit Credential';
+  document.getElementById('f-delete').classList.remove('hidden');
+  clearFormFields();
+
+  document.getElementById('f-label').value    = cred.label || '';
+  document.getElementById('f-username').value = cred.username || '';
+  document.getElementById('f-password').value = cred.password || '';
+  document.getElementById('f-tags').value     = (cred.tags || []).join(', ');
+  document.getElementById('f-notes').value    = cred.notes || '';
+
+  if (cred.urlRules?.length) {
+    cred.urlRules.forEach(r => addRuleRow(r));
+  } else {
+    addRuleRow();
+  }
+
+  showForm();
+}
+
+function showForm() {
+  document.getElementById('add-form').classList.remove('hidden');
   document.getElementById('add-btn').classList.add('hidden');
+  document.getElementById('f-username').focus();
 }
 
 function closeAddForm() {
   document.getElementById('add-form').classList.add('hidden');
   document.getElementById('add-btn').classList.remove('hidden');
-  clearAddForm();
+  clearFormFields();
+  editingCredId = null;
 }
 
-function clearAddForm() {
-  ['f-label','f-username','f-password','f-tags','f-notes','f-rule-pattern'].forEach(id => {
+function clearFormFields() {
+  ['f-label','f-username','f-password','f-tags','f-notes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  document.getElementById('f-rule-type').value = 'domain';
+  document.getElementById('f-rules-list').innerHTML = '';
   const err = document.getElementById('f-error');
   err.classList.add('hidden');
   err.textContent = '';
@@ -97,7 +140,38 @@ function clearAddForm() {
   if (pw) pw.type = 'password';
 }
 
-async function saveNewCred() {
+function addRuleRow(rule = { type: 'domain', pattern: '' }) {
+  const list = document.getElementById('f-rules-list');
+  const row  = document.createElement('div');
+  row.className = 'url-rule-row';
+
+  const typeOptions = RULE_TYPES.map(t =>
+    `<option value="${t.value}"${t.value === rule.type ? ' selected' : ''}>${t.label}</option>`
+  ).join('');
+
+  row.innerHTML = `
+    <select class="field-select rule-type">${typeOptions}</select>
+    <input class="field-input rule-pattern" type="text" value="${esc(rule.pattern)}" placeholder="e.g. localhost:3000" />
+    <button class="icon-btn-sm rule-remove" title="Remove">✕</button>`;
+
+  row.querySelector('.rule-remove').addEventListener('click', () => {
+    row.remove();
+    if (!document.getElementById('f-rules-list').children.length) addRuleRow();
+  });
+
+  list.appendChild(row);
+}
+
+function collectRules() {
+  return Array.from(document.querySelectorAll('#f-rules-list .url-rule-row'))
+    .map(row => ({
+      type:    row.querySelector('.rule-type').value,
+      pattern: row.querySelector('.rule-pattern').value.trim(),
+    }))
+    .filter(r => r.pattern);
+}
+
+async function saveForm() {
   const username = document.getElementById('f-username').value.trim();
   const password = document.getElementById('f-password').value.trim();
   const errEl    = document.getElementById('f-error');
@@ -109,25 +183,29 @@ async function saveNewCred() {
   }
   errEl.classList.add('hidden');
 
-  const label   = document.getElementById('f-label').value.trim() || username;
-  const tags    = document.getElementById('f-tags').value
-                    .split(',').map(t => t.trim()).filter(Boolean);
-  const notes   = document.getElementById('f-notes').value.trim();
-  const rType   = document.getElementById('f-rule-type').value;
-  const pattern = document.getElementById('f-rule-pattern').value.trim();
+  const label  = document.getElementById('f-label').value.trim() || username;
+  const tags   = document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const notes  = document.getElementById('f-notes').value.trim();
+  const urlRules = collectRules();
 
-  const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  const id = editingCredId || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0;
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 
-  const cred = {
-    id, label, username, password, notes, tags,
-    urlRules: pattern ? [{ type: rType, pattern }] : [],
-    autoSubmit: false,
-  };
+  allCreds = await msg({ type: 'SAVE', credential: {
+    id, label, username, password, notes, tags, urlRules, autoSubmit: false,
+  }});
 
-  allCreds = await msg({ type: 'SAVE', credential: cred });
+  closeAddForm();
+  render(allCreds);
+}
+
+async function deleteCred() {
+  if (!editingCredId) return;
+  const cred = allCreds.find(c => c.id === editingCredId);
+  if (!confirm(`Delete "${cred?.label || cred?.username}"?`)) return;
+  allCreds = await msg({ type: 'DELETE', id: editingCredId });
   closeAddForm();
   render(allCreds);
 }
@@ -193,7 +271,7 @@ function credItem(cred, isMatch) {
       <button class="btn btn-edit">Edit</button>
     </div>`;
 
-  div.querySelector('.btn-edit').addEventListener('click', () => openOptions(cred.id));
+  div.querySelector('.btn-edit').addEventListener('click', () => openEditForm(cred.id));
   div.querySelector('.btn-fill')?.addEventListener('click', () => fillInTab(cred));
 
   return div;
