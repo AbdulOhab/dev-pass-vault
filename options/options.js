@@ -60,6 +60,12 @@ async function init() {
     });
   });
 
+  // Open settings tab if navigated with #settings hash
+  if (location.hash === '#settings') {
+    const settingsBtn = document.querySelector('.tab-btn[data-tab="settings"]');
+    if (settingsBtn) settingsBtn.click();
+  }
+
   document.getElementById('search').addEventListener('input', e => {
     searchQuery = e.target.value.toLowerCase();
     renderList();

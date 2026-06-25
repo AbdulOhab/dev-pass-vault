@@ -26,6 +26,9 @@ async function init() {
   applyTheme(settings.theme || 'dark');
 
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html') + '#settings' });
+  });
 
   allCreds = await msg({ type: 'GET_ALL' });
 

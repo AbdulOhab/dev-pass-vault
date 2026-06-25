@@ -11,10 +11,25 @@
   let fabPosition = 'right-center';
   let currentTheme = 'dark';
 
+  const SVG_MOON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  const SVG_SUN  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
   function applyThemeToEl(el) {
     if (!el) return;
     if (currentTheme === 'light') el.setAttribute('data-theme', 'light');
     else el.removeAttribute('data-theme');
+  }
+
+  async function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    try {
+      await chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', settings: { theme: currentTheme } });
+    } catch (_) {}
+    applyThemeToEl(floatingBtn);
+    applyThemeToEl(panel);
+    applyThemeToEl(document.getElementById('dpv-save-prompt'));
+    const btn = panel?.querySelector('.dpv-theme-btn');
+    if (btn) btn.innerHTML = currentTheme === 'dark' ? SVG_MOON : SVG_SUN;
   }
 
   // ── Login page detection ───────────────────────────────────────────────────
@@ -155,12 +170,14 @@
     header.innerHTML = `
       <span class="dpv-panel-title">Dev Pass Vault</span>
       <div class="dpv-panel-actions">
+        <button class="dpv-icon-btn dpv-theme-btn" title="Toggle theme">${currentTheme === 'dark' ? SVG_MOON : SVG_SUN}</button>
         <button class="dpv-icon-btn dpv-add-btn" title="Add credential for this page">+</button>
         <button class="dpv-icon-btn dpv-close-btn" title="Close">✕</button>
       </div>`;
 
     header.querySelector('.dpv-close-btn').addEventListener('click', closePanel);
     header.querySelector('.dpv-add-btn').addEventListener('click', openAddDialog);
+    header.querySelector('.dpv-theme-btn').addEventListener('click', toggleTheme);
 
     panel.appendChild(header);
 
