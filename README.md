@@ -32,24 +32,7 @@ A lightweight browser extension for quickly filling login forms in development e
 4. Select the `dev_pass_vault_extention` folder
 5. The extension icon appears in your toolbar
 
-**Package as .crx (to share or install offline):**
-
-1. Open `chrome://extensions/`
-2. Enable **Developer mode**
-3. Click **Pack extension**
-4. In "Extension root directory" select the `dev_pass_vault_extention` folder
-5. Leave "Private key file" empty for first time (a `.pem` key will be generated)
-6. Click **Pack Extension**
-7. A `.crx` file and `.pem` key file are created in the parent folder
-8. To install the `.crx`: drag and drop it onto `chrome://extensions/`
-
-> **Keep the `.pem` file safe** — you need it to update the same extension later.
-
-**Via command line (headless pack):**
-```bash
-google-chrome --pack-extension=/path/to/dev_pass_vault_extention \
-              --pack-extension-key=/path/to/dev_pass_vault_extention.pem
-```
+> **Note:** Chrome/Chromium/Brave block `.crx` installation from outside the Web Store — even with Developer mode on. **Load unpacked** is the only way to use this extension locally in Chromium-based browsers.
 
 ---
 
@@ -69,7 +52,7 @@ google-chrome --pack-extension=/path/to/dev_pass_vault_extention \
 **Method 1 — zip manually:**
 ```bash
 cd dev_pass_vault_extention
-zip -r ../dev_pass_vault.xpi . -x "*.git*" -x "*.md" -x "SESSION_NOTES*"
+zip -r ./dev_pass_vault.xpi . -x "*.git*" -x "*.md" -x "SESSION_NOTES*"
 ```
 Then in Firefox:
 1. Open `about:addons`

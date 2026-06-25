@@ -1,0 +1,19 @@
+# Packaged extension files
+*.crx
+*.pem
+*.xpi
+*.zip
+
+# web-ext build output
+web-ext-artifacts/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Node (if web-ext installed locally)
+node_modules/
