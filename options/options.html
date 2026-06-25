@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Pass Vault — Manage Credentials</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Dev Pass Vault
+      </div>
+
+      <!-- Tab switcher -->
+      <div class="sidebar-tabs">
+        <button class="tab-btn active" data-tab="credentials">Credentials</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
+      </div>
+
+      <!-- Credentials tab content -->
+      <div id="tab-credentials" class="tab-content">
+        <div class="sidebar-search">
+          <input id="search" type="text" placeholder="Search…" />
+        </div>
+        <div id="cred-list" class="cred-list"></div>
+        <div class="sidebar-footer">
+          <button id="new-btn" class="btn btn-primary">+ New Credential</button>
+          <div class="import-export">
+            <button id="export-btn" class="btn btn-ghost">Export JSON</button>
+            <label class="btn btn-ghost">
+              Import JSON
+              <input id="import-input" type="file" accept=".json" hidden />
+            </label>
+          </div>
+          <div id="stats" class="stats"></div>
+        </div>
+      </div>
+
+      <!-- Settings tab content -->
+      <div id="tab-settings" class="tab-content hidden">
+        <div class="settings-panel">
+
+          <div class="setting-group">
+            <div class="setting-label">Theme</div>
+            <div class="setting-desc">Extension appearance</div>
+            <div class="theme-toggle">
+              <button class="theme-btn active" data-theme="dark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                Dark
+              </button>
+              <button class="theme-btn" data-theme="light">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                Light
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">Vault Icon Position</div>
+            <div class="setting-desc">Where the 🔒 button appears on login pages</div>
+            <div class="fab-pos-grid">
+              <button class="fab-pos-btn" data-fab="left-top">↖</button>
+              <div class="fab-pos-mid">Left</div>
+              <button class="fab-pos-btn" data-fab="right-top">↗</button>
+              <div class="fab-pos-mid"></div>
+
+              <button class="fab-pos-btn" data-fab="left-center">←</button>
+              <div class="fab-pos-mid fab-pos-center-label">Center</div>
+              <button class="fab-pos-btn" data-fab="right-center">→</button>
+              <div class="fab-pos-mid"></div>
+
+              <button class="fab-pos-btn" data-fab="left-bottom">↙</button>
+              <div class="fab-pos-mid">Left</div>
+              <button class="fab-pos-btn" data-fab="right-bottom">↘</button>
+              <div class="fab-pos-mid"></div>
+            </div>
+            <div class="fab-pos-labels">
+              <span>Left side</span>
+              <span>Right side</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">Save Prompt Position</div>
+            <div class="setting-desc">Where to show "Save password?" notification</div>
+            <div class="position-grid">
+              <button class="pos-btn" data-pos="top-left">↖ Top Left</button>
+              <button class="pos-btn active" data-pos="top-right">↗ Top Right</button>
+              <button class="pos-btn" data-pos="top-center">↑ Top Center</button>
+              <button class="pos-btn" data-pos="bottom-left">↙ Bottom Left</button>
+              <button class="pos-btn" data-pos="bottom-right">↘ Bottom Right</button>
+              <button class="pos-btn" data-pos="bottom-center">↓ Bottom Center</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">Auto-detect Logins</div>
+            <div class="setting-desc">Show save prompt when you log in to a new site</div>
+            <label class="toggle-row">
+              <input id="s-autodetect" type="checkbox" checked />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span id="s-autodetect-label">Enabled</span>
+            </label>
+          </div>
+
+          <button id="save-settings-btn" class="btn btn-primary" style="margin-top:8px">Save Settings</button>
+          <div id="settings-saved" class="settings-saved hidden">Settings saved ✓</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Editor pane -->
+    <main id="editor" class="editor">
+      <div class="editor-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <p>Select a credential to edit<br/>or create a new one.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Credential editor template -->
+  <template id="editor-tpl">
+    <div class="editor-inner">
+      <div class="editor-header">
+        <h2 id="editor-title">New Credential</h2>
+        <div class="editor-header-actions">
+          <button id="delete-btn" class="btn btn-danger hidden">Delete</button>
+          <button id="save-btn" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Label</label>
+          <input id="f-label" type="text" placeholder="e.g. Dev Admin" />
+        </div>
+        <div class="form-group">
+          <label>Username / Email</label>
+          <input id="f-username" type="text" placeholder="user@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input id="f-password" type="password" placeholder="••••••••" />
+            <button class="pw-toggle" type="button" title="Show/hide">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="f-notes" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Tags <span class="hint">(comma separated)</span></label>
+          <input id="f-tags" type="text" placeholder="dev, admin, staging" />
+        </div>
+      </div>
+
+      <div class="section-title">
+        URL Rules
+        <button id="add-rule-btn" class="btn btn-sm btn-ghost">+ Add Rule</button>
+      </div>
+      <div id="url-rules" class="url-rules"></div>
+
+      <div class="section-title">Options</div>
+      <label class="toggle-row">
+        <input id="f-autosubmit" type="checkbox" />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span>Auto-submit after fill (Fill+Go by default)</span>
+      </label>
+    </div>
+  </template>
+
+  <script src="options.js"></script>
+</body>
+</html>
