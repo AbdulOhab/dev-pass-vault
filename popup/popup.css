@@ -226,3 +226,143 @@ body {
   padding: 10px 12px;
   border-top: 1px solid var(--border);
 }
+
+/* ── Add Credential Form ─────────────────────────────────────────────────── */
+.add-form {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: form-slide-down 0.15s ease;
+}
+.add-form.hidden { display: none; }
+
+@keyframes form-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.add-form-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-hover);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.icon-btn-sm {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: var(--ghost-bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.icon-btn-sm:hover { background: var(--ghost-hover); color: var(--text-primary); }
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.field-hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.req { color: #f87171; }
+
+.field-input {
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.12s;
+  font-family: inherit;
+  width: 100%;
+}
+.field-input:focus { border-color: var(--border-focus); }
+.field-input::placeholder { color: var(--text-secondary); }
+
+.field-textarea {
+  resize: none;
+  line-height: 1.5;
+}
+
+.pw-row {
+  position: relative;
+}
+.pw-row .field-input { padding-right: 32px; }
+.pw-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  color: var(--text-secondary);
+}
+
+.url-rule-row {
+  display: flex;
+  gap: 5px;
+}
+.field-select {
+  padding: 6px 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  width: 90px;
+}
+.field-select:focus { border-color: var(--border-focus); }
+
+.add-form-footer {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+.add-form-footer .btn-primary { flex: 1; padding: 7px; font-size: 12px; }
+.add-form-footer .btn-ghost   { flex: 1; padding: 7px; font-size: 12px; }
+
+.form-error {
+  font-size: 11px;
+  color: #f87171;
+  padding: 2px 0;
+}
+.form-error.hidden { display: none; }
+
+/* Note dot in cred list */
+.note-dot { font-size: 11px; cursor: default; }
+
+.btn-ghost { background: var(--ghost-bg); color: var(--ghost-text); }
+.btn-ghost:hover { background: var(--ghost-hover); color: var(--text-primary); }

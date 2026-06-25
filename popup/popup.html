@@ -18,7 +18,6 @@
       </div>
       <div class="header-actions">
         <button id="theme-toggle" class="icon-btn" title="Toggle dark/light mode">
-          <!-- icon swapped by JS -->
           <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
@@ -37,6 +36,57 @@
         </a>
       </div>
     </header>
+
+    <!-- ── Add form (shown/hidden) ── -->
+    <div id="add-form" class="add-form hidden">
+      <div class="add-form-title">
+        <span>New Credential</span>
+        <button id="add-form-close" class="icon-btn-sm" title="Cancel">✕</button>
+      </div>
+
+      <div class="form-row">
+        <label class="field-label">Label</label>
+        <input id="f-label" class="field-input" type="text" placeholder="e.g. Dev Admin" />
+      </div>
+      <div class="form-row">
+        <label class="field-label">Username / Email <span class="req">*</span></label>
+        <input id="f-username" class="field-input" type="text" placeholder="user@example.com" autocomplete="off" />
+      </div>
+      <div class="form-row">
+        <label class="field-label">Password <span class="req">*</span></label>
+        <div class="pw-row">
+          <input id="f-password" class="field-input" type="password" placeholder="••••••••" autocomplete="off" />
+          <button class="pw-eye" type="button" title="Show/hide">👁</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="field-label">Tags <span class="field-hint">(comma separated)</span></label>
+        <input id="f-tags" class="field-input" type="text" placeholder="dev, admin, staging" />
+      </div>
+      <div class="form-row">
+        <label class="field-label">Notes</label>
+        <textarea id="f-notes" class="field-input field-textarea" rows="2" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="field-label">URL Rule</label>
+        <div class="url-rule-row">
+          <select id="f-rule-type" class="field-select">
+            <option value="domain">Domain</option>
+            <option value="exact">Exact URL</option>
+            <option value="prefix">Prefix</option>
+            <option value="contains">Contains</option>
+            <option value="wildcard">Wildcard</option>
+          </select>
+          <input id="f-rule-pattern" class="field-input" type="text" placeholder="e.g. localhost:3000" />
+        </div>
+      </div>
+
+      <div class="add-form-footer">
+        <button id="f-save" class="btn btn-primary">Save</button>
+        <button id="f-cancel" class="btn btn-ghost">Cancel</button>
+      </div>
+      <div id="f-error" class="form-error hidden"></div>
+    </div>
 
     <div class="search-wrap">
       <input type="text" id="search" class="search-input" placeholder="Search credentials…" />
