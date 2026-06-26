@@ -40,13 +40,6 @@
             <button id="bulk-delete-btn" class="btn btn-danger btn-sm" disabled>Delete (0)</button>
             <button id="cancel-select-btn" class="btn btn-ghost btn-sm">✕</button>
           </div>
-          <div class="import-export">
-            <button id="export-btn" class="btn btn-ghost">Export JSON</button>
-            <label class="btn btn-ghost">
-              Import JSON
-              <input id="import-input" type="file" accept=".json" hidden />
-            </label>
-          </div>
           <div id="stats" class="stats"></div>
         </div>
       </div>
@@ -122,6 +115,19 @@
           <div id="settings-saved" class="settings-saved hidden">Settings saved ✓</div>
 
           <div class="setting-group" style="margin-top:16px">
+            <div class="setting-label">Import / Export</div>
+            <div class="setting-desc">Backup or restore your credentials as JSON</div>
+            <div class="import-export">
+              <button id="export-btn" class="btn btn-ghost">Export JSON</button>
+              <label class="btn btn-ghost">
+                Import JSON
+                <input id="import-input" type="file" accept=".json" hidden />
+              </label>
+            </div>
+
+          </div>
+
+          <div class="setting-group" style="margin-top:16px">
             <div class="setting-label">Danger Zone</div>
             <div class="setting-desc">Permanently delete all saved credentials and pins</div>
             <button id="reset-all-btn" class="btn-reset">⚠ Reset All Data</button>
@@ -140,6 +146,163 @@
         <p>Select a credential to edit<br/>or create a new one.</p>
       </div>
     </main>
+
+    <!-- Settings detail pane (right side when Settings tab is active) -->
+    <aside id="settings-detail" class="settings-detail hidden">
+      <div class="sd-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Dev Pass Vault — How to Use
+      </div>
+
+      <!-- Getting Started -->
+      <div class="ie-section">
+        <div class="ie-section-title">🚀 Getting Started</div>
+        <div class="sd-steps">
+          <div class="sd-step"><span class="sd-step-num">1</span><span>Navigate to any login page — the <strong>🔒 vault icon</strong> appears on the right side of the screen.</span></div>
+          <div class="sd-step"><span class="sd-step-num">2</span><span><strong>Hover</strong> over the icon — a panel opens showing saved credentials for this page.</span></div>
+          <div class="sd-step"><span class="sd-step-num">3</span><span>Click <strong>+</strong> in the panel to add a new credential. The URL rule is auto-filled with the current domain.</span></div>
+          <div class="sd-step"><span class="sd-step-num">4</span><span>Fill in your username and password, then click <strong>Save</strong>.</span></div>
+          <div class="sd-step"><span class="sd-step-num">5</span><span>Next visit — hover the icon and click <strong>Fill</strong> or <strong>Fill+Go</strong> to autofill.</span></div>
+        </div>
+      </div>
+
+      <!-- Vault Icon (FAB) -->
+      <div class="ie-section">
+        <div class="ie-section-title">🔒 Vault Icon (Floating Button)</div>
+        <ul class="ie-list">
+          <li>Appears automatically on any page with a <code>&lt;input type="password"&gt;</code> field.</li>
+          <li><strong>Hover</strong> → opens the credential panel for the current URL.</li>
+          <li><strong>Click Fill</strong> → fills username + password fields.</li>
+          <li><strong>Click Fill+Go</strong> → fills and auto-submits the login form.</li>
+          <li>The badge number shows how many credentials match the current page.</li>
+          <li>FAB position can be changed in <strong>Settings → Vault Icon Position</strong>.</li>
+        </ul>
+        <div class="sd-tip">💡 If the button doesn't appear, the page may load the form dynamically — wait a moment or scroll down.</div>
+      </div>
+
+      <!-- Auto-save -->
+      <div class="ie-section">
+        <div class="ie-section-title">💾 Auto-Save Prompt</div>
+        <ul class="ie-list">
+          <li>When you log in to a site with new credentials, a <strong>toast notification</strong> appears: "Save this password?"</li>
+          <li>Click <strong>Save</strong> → instantly saves with the current domain as URL rule.</li>
+          <li>Click <strong>Not Now</strong> → dismiss for this session.</li>
+          <li>Prompt position can be changed in <strong>Settings → Save Prompt Position</strong>.</li>
+          <li>Can be disabled entirely in <strong>Settings → Auto-detect Logins</strong>.</li>
+        </ul>
+      </div>
+
+      <!-- Managing Credentials -->
+      <div class="ie-section">
+        <div class="ie-section-title">🗂 Managing Credentials</div>
+        <div class="ie-desc" style="margin-bottom:6px"><strong>From the floating panel (on any login page):</strong></div>
+        <ul class="ie-list">
+          <li><strong>+</strong> → add new credential pre-filled with the current domain.</li>
+          <li><strong>✎ Edit</strong> → edit label, username, password, notes, tags inline.</li>
+          <li><strong>📌 Pin</strong> → pin a credential to always show it at the top of the panel.</li>
+          <li><strong>🗑 Delete</strong> → remove a credential permanently.</li>
+        </ul>
+        <div class="ie-desc" style="margin:8px 0 6px"><strong>From this Options page (Credentials tab):</strong></div>
+        <ul class="ie-list">
+          <li>Full editor with all fields — label, username, password, notes, tags, URL rules, auto-submit toggle.</li>
+          <li><strong>Search</strong> bar → filter by label, username, tags.</li>
+          <li><strong>☑ Select mode</strong> → bulk delete multiple credentials at once.</li>
+        </ul>
+      </div>
+
+      <!-- URL Rules -->
+      <div class="ie-section">
+        <div class="ie-section-title">🔗 URL Rules</div>
+        <div class="ie-desc">Each credential can have <strong>multiple URL rules</strong> — useful for the same account across dev / staging / prod.</div>
+        <div class="ie-rules-table">
+          <div class="ie-rule-row">
+            <span class="ie-badge">domain</span>
+            <span class="ie-rule-desc">Any page on this hostname — <code>localhost:3000</code> matches all pages on that host. <em>Best for most cases.</em></span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge">exact</span>
+            <span class="ie-rule-desc">This specific URL only — e.g. <code>http://localhost:3000/admin/login</code>.</span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge">prefix</span>
+            <span class="ie-rule-desc">Any URL starting with the pattern — <code>https://staging.myapp.com</code> matches all pages under it.</span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge">contains</span>
+            <span class="ie-rule-desc">Any URL that contains the string anywhere — e.g. <code>internal.company.com</code>.</span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge">wildcard</span>
+            <span class="ie-rule-desc"><code>*</code> = anything except <code>/</code> &nbsp;·&nbsp; <code>**</code> = everything — e.g. <code>*.myapp.com/login/**</code>.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Import / Export -->
+      <div class="ie-section">
+        <div class="ie-section-title">📤 Export</div>
+        <ul class="ie-list">
+          <li>Click <strong>Export JSON</strong> — downloads <code>dev-pass-vault-2025-04-23_14-35.json</code>.</li>
+          <li>Keep the file safe — it contains passwords in plain text.</li>
+          <li>Use it to back up or move credentials to another browser / device.</li>
+        </ul>
+      </div>
+
+      <div class="ie-section">
+        <div class="ie-section-title">📥 Import</div>
+        <ul class="ie-list">
+          <li>Click <strong>Import JSON</strong> and select a previously exported file.</li>
+          <li>Credentials with the same <code>id</code> are skipped — no duplicates created.</li>
+          <li>Only new entries are merged into your vault.</li>
+        </ul>
+        <div class="ie-desc" style="margin-top:8px">Expected JSON structure:</div>
+        <pre class="ie-code">{
+  "version": 1,
+  "credentials": [
+    {
+      "id": "unique-id",
+      "label": "My Site",
+      "username": "admin",
+      "password": "s3cr3t",
+      "notes": "optional",
+      "tags": ["dev", "staging"],
+      "autoSubmit": false,
+      "createdAt": "2025-04-23 08:36:32 UTC",
+      "updatedAt": "2025-04-23 08:36:32 UTC",
+      "urlRules": [
+        { "pattern": "example.com", "type": "domain" }
+      ]
+    }
+  ],
+  "exportedAt": "2025-04-23 14:35:00 UTC"
+}</pre>
+      </div>
+
+      <!-- Troubleshooting -->
+      <div class="ie-section">
+        <div class="ie-section-title">🛠 Troubleshooting</div>
+        <div class="ie-rules-table">
+          <div class="ie-rule-row">
+            <span class="ie-badge ie-badge-warn">FAB missing</span>
+            <span class="ie-rule-desc">Page must have a <code>type="password"</code> input. Some pages load the form dynamically — wait a moment or scroll.</span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge ie-badge-warn">Fill not working</span>
+            <span class="ie-rule-desc">On React/Vue apps, click the input field first, then click Fill. The extension uses native input value setters.</span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge ie-badge-warn">No match shown</span>
+            <span class="ie-rule-desc">Check the URL rule type — use <strong>Domain</strong> for most cases. Open the popup to verify the credential lists under "This page".</span>
+          </div>
+          <div class="ie-rule-row">
+            <span class="ie-badge ie-badge-warn">Firefox error</span>
+            <span class="ie-rule-desc">"background.service_worker disabled" — load via <code>about:debugging → This Firefox → Load Temporary Add-on</code> and select <code>manifest.json</code>.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sd-footer-note">⚠ Credentials are stored in plain text in browser local storage. For development use only — do not store production or sensitive account passwords.</div>
+    </aside>
   </div>
 
   <!-- Credential editor template -->

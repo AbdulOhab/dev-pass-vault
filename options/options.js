@@ -60,6 +60,9 @@ async function init() {
       const tab = btn.dataset.tab;
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      const isSettings = tab === 'settings';
+      document.getElementById('editor').classList.toggle('hidden', isSettings);
+      document.getElementById('settings-detail').classList.toggle('hidden', !isSettings);
     });
   });
 
@@ -398,7 +401,13 @@ async function doExport() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `dev-pass-vault-${Date.now()}.json`;
+  const now = new Date();
+  const stamp = now.getFullYear()
+    + '-' + String(now.getMonth() + 1).padStart(2, '0')
+    + '-' + String(now.getDate()).padStart(2, '0')
+    + '_' + String(now.getHours()).padStart(2, '0')
+    + '-' + String(now.getMinutes()).padStart(2, '0');
+  a.download = `dev-pass-vault-${stamp}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

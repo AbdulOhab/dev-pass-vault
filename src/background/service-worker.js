@@ -44,9 +44,28 @@ async function deleteCredential(id) {
   return filtered;
 }
 
+function toReadableDate(ts) {
+  return new Date(ts).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
+}
+
 async function exportData() {
   const all = await getAllCredentials();
-  return JSON.stringify({ version: 1, credentials: all, exportedAt: Date.now() }, null, 2);
+  const credentials = all.map(c => ({
+    ...c,
+    createdAt: toReadableDate(c.createdAt),
+    updatedAt: toReadableDate(c.updatedAt),
+  }));
+  return JSON.stringify({
+    version: 1,
+    credentials,
+    exportedAt: toReadableDate(Date.now()),
+  }, null, 2);
+}
+
+function toTimestamp(val) {
+  if (typeof val === 'number') return val;
+  const ts = Date.parse(val);
+  return isNaN(ts) ? Date.now() : ts;
 }
 
 async function importData(jsonString) {
@@ -54,7 +73,13 @@ async function importData(jsonString) {
   if (!data.credentials || !Array.isArray(data.credentials)) throw new Error('Invalid format');
   const existing = await getAllCredentials();
   const existingIds = new Set(existing.map(c => c.id));
-  const toAdd = data.credentials.filter(c => !existingIds.has(c.id));
+  const toAdd = data.credentials
+    .filter(c => !existingIds.has(c.id))
+    .map(c => ({
+      ...c,
+      createdAt: toTimestamp(c.createdAt),
+      updatedAt: toTimestamp(c.updatedAt),
+    }));
   const merged = [...existing, ...toAdd];
   await chrome.storage.local.set({ [STORAGE_KEY]: merged });
   return { added: toAdd.length, total: merged.length };
