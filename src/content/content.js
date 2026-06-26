@@ -226,7 +226,14 @@
     // Current URL pill
     const urlPill = document.createElement('div');
     urlPill.className = 'dpv-url-pill';
-    urlPill.textContent = location.hostname + (location.port ? `:${location.port}` : '');
+    const isHttps = location.protocol === 'https:';
+    const hostname = location.hostname + (location.port ? `:${location.port}` : '');
+    const lockSvg = isHttps
+      ? `<svg class="dpv-url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+      : `<svg class="dpv-url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+    urlPill.innerHTML = `
+      ${lockSvg}
+      <span class="dpv-url-proto">${location.protocol}//</span><span class="dpv-url-host">${hostname}</span>`;
     panel.appendChild(urlPill);
 
     // Credential list
@@ -272,9 +279,8 @@
 
   function createCredentialItem(cred) {
     const item = document.createElement('div');
-    item.className = 'dpv-item';
-
     const pinned = isFabPinned(cred.id);
+    item.className = pinned ? 'dpv-item dpv-item-pinned' : 'dpv-item';
     const pinSvg = `<svg viewBox="0 0 24 24" width="12" height="12" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
     const noteIcon = cred.notes ? ' 📝' : '';
 

@@ -66,6 +66,8 @@
 /* ── Floating Action Button ──────────────────────────────────────────────── */
 #dpv-fab {
   position: fixed;
+  right: 16px;
+  top: 80px;
   width: 42px;
   height: 42px;
   border-radius: 50%;
@@ -165,16 +167,36 @@
 
 /* URL pill */
 .dpv-url-pill {
-  margin: 8px 14px 4px;
-  padding: 4px 10px;
+  margin: 8px 12px 6px;
+  padding: 5px 12px;
   background: var(--dpv-bg2);
+  border: 1px solid var(--dpv-border2);
   border-radius: 20px;
   font-size: 11px;
   color: var(--dpv-url-text);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dpv-url-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+.dpv-url-proto {
+  color: var(--dpv-text2);
+  font-size: 10px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.dpv-url-host {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Credential list */
@@ -198,14 +220,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 10px;
+  padding: 9px 10px;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.1s;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
+  border-left: 2px solid var(--dpv-accent);
 }
 
 .dpv-item:hover { background: var(--dpv-hover); }
+.dpv-item-pinned { border-left-color: var(--dpv-accent2); }
 
 .dpv-item-info {
   flex: 1;
@@ -285,11 +308,11 @@
   font-family: inherit;
 }
 
-.dpv-fill-btn   { background: var(--dpv-bg2); color: var(--dpv-text3); }
-.dpv-fill-btn:hover { background: var(--dpv-border2); color: var(--dpv-text1); }
+.dpv-fill-btn   { background: var(--dpv-btn); color: #fff; }
+.dpv-fill-btn:hover { background: var(--dpv-btn-h); }
 
-.dpv-submit-btn { background: var(--dpv-btn); color: #fff; }
-.dpv-submit-btn:hover { background: var(--dpv-btn-h); }
+.dpv-submit-btn { background: var(--dpv-bg2); color: var(--dpv-text3); }
+.dpv-submit-btn:hover { background: var(--dpv-border2); color: var(--dpv-text1); }
 
 .dpv-edit-btn { background: var(--dpv-bg2); color: var(--dpv-text2); padding: 5px 8px; }
 .dpv-edit-btn:hover { background: var(--dpv-border2); color: var(--dpv-text1); }

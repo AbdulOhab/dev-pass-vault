@@ -47,7 +47,6 @@
               <input id="import-input" type="file" accept=".json" hidden />
             </label>
           </div>
-          <button id="reset-all-btn" class="btn-reset">⚠ Reset All Data</button>
           <div id="stats" class="stats"></div>
         </div>
       </div>
@@ -121,6 +120,12 @@
 
           <button id="save-settings-btn" class="btn btn-primary" style="margin-top:8px">Save Settings</button>
           <div id="settings-saved" class="settings-saved hidden">Settings saved ✓</div>
+
+          <div class="setting-group" style="margin-top:16px">
+            <div class="setting-label">Danger Zone</div>
+            <div class="setting-desc">Permanently delete all saved credentials and pins</div>
+            <button id="reset-all-btn" class="btn-reset">⚠ Reset All Data</button>
+          </div>
         </div>
       </div>
     </aside>
