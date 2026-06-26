@@ -2,7 +2,7 @@
 const SETTINGS_KEY = 'dpv_settings';
 const DEFAULT_SETTINGS = {
   savePromptPosition: 'top-right',
-  fabPosition: 'right-center',
+  fabPosition: 'right-top',
   theme: 'dark',
   autoDetectLogin: true,
 };
@@ -145,6 +145,16 @@ async function handle(msg) {
       return exportData();
     case 'IMPORT':
       return importData(msg.json);
+    case 'BULK_DELETE': {
+      const all = await getAllCredentials();
+      const toDelete = new Set(msg.ids);
+      const remaining = all.filter(c => !toDelete.has(c.id));
+      await chrome.storage.local.set({ [STORAGE_KEY]: remaining });
+      return remaining;
+    }
+    case 'RESET_ALL':
+      await chrome.storage.local.remove([STORAGE_KEY, 'dpv_pins']);
+      return [];
     default:
       throw new Error(`Unknown message type: ${msg.type}`);
   }

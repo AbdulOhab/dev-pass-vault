@@ -157,7 +157,7 @@ body {
   gap: 8px;
   padding: 9px 10px;
   border-radius: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
   transition: background 0.1s;
   border-left: 2px solid transparent;
 }
@@ -393,6 +393,24 @@ body {
 
 /* Note dot in cred list */
 .note-dot { font-size: 11px; cursor: default; }
+
+/* Pin button */
+.btn-pin {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-right: 6px;
+  opacity: 0.2;
+  color: var(--text-primary);
+  transition: opacity 0.12s;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.btn-pin:hover { opacity: 0.65; }
+.btn-pin.active { opacity: 1; color: var(--accent-hover); }
 
 .btn-ghost { background: var(--ghost-bg); color: var(--ghost-text); }
 .btn-ghost:hover { background: var(--ghost-hover); color: var(--text-primary); }

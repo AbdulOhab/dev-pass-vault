@@ -31,7 +31,15 @@
         </div>
         <div id="cred-list" class="cred-list"></div>
         <div class="sidebar-footer">
-          <button id="new-btn" class="btn btn-primary">+ New Credential</button>
+          <div class="footer-primary-row">
+            <button id="new-btn" class="btn btn-primary">+ New Credential</button>
+            <button id="select-mode-btn" class="btn btn-ghost btn-sm" title="Select to bulk delete">☑</button>
+          </div>
+          <div id="bulk-bar" class="bulk-bar hidden">
+            <button id="select-all-btn" class="btn btn-ghost btn-sm">Select All</button>
+            <button id="bulk-delete-btn" class="btn btn-danger btn-sm" disabled>Delete (0)</button>
+            <button id="cancel-select-btn" class="btn btn-ghost btn-sm">✕</button>
+          </div>
           <div class="import-export">
             <button id="export-btn" class="btn btn-ghost">Export JSON</button>
             <label class="btn btn-ghost">
@@ -39,6 +47,7 @@
               <input id="import-input" type="file" accept=".json" hidden />
             </label>
           </div>
+          <button id="reset-all-btn" class="btn-reset">⚠ Reset All Data</button>
           <div id="stats" class="stats"></div>
         </div>
       </div>
@@ -64,7 +73,7 @@
 
           <div class="setting-group">
             <div class="setting-label">Vault Icon Position</div>
-            <div class="setting-desc">Where the 🔒 button appears on login pages</div>
+            <div class="setting-desc">Where the button appears on login pages</div>
             <div class="fab-pos-grid">
               <button class="fab-pos-btn" data-fab="left-top">↖</button>
               <div class="fab-pos-mid">Left</div>

@@ -242,8 +242,36 @@
   color: var(--dpv-tag-text);
 }
 
+/* Group header */
+.dpv-group-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--dpv-text2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 8px 6px 3px;
+}
+
 /* Action buttons */
-.dpv-item-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.dpv-item-btns { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+
+/* Pin button */
+.dpv-pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-right: 4px;
+  opacity: 0.2;
+  color: var(--dpv-text1);
+  transition: opacity 0.12s;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.dpv-pin-btn:hover { opacity: 0.65; }
+.dpv-pin-btn.active { opacity: 1; color: var(--dpv-accent); }
 
 .dpv-btn {
   padding: 5px 10px;

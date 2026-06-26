@@ -8,8 +8,50 @@
   let detected = false;
   let hoverTimer = null;
   let leaveTimer = null;
-  let fabPosition = 'right-center';
+  let fabPosition = 'right-top';
   let currentTheme = 'dark';
+  let pinnedByUrl = {};
+
+  const PINS_KEY = 'dpv_pins';
+
+  async function loadPins() {
+    try {
+      const result = await chrome.storage.local.get(PINS_KEY);
+      const raw = result[PINS_KEY] || {};
+      pinnedByUrl = {};
+      for (const [h, ids] of Object.entries(raw)) {
+        pinnedByUrl[h] = new Set(ids);
+      }
+    } catch (_) {}
+  }
+
+  async function savePins() {
+    const raw = {};
+    for (const [h, set] of Object.entries(pinnedByUrl)) {
+      if (set.size > 0) raw[h] = [...set];
+    }
+    try { await chrome.storage.local.set({ [PINS_KEY]: raw }); } catch (_) {}
+  }
+
+  function fabHost() {
+    return location.hostname + (location.port ? `:${location.port}` : '');
+  }
+
+  function isFabPinned(credId) {
+    return pinnedByUrl[fabHost()]?.has(credId) || false;
+  }
+
+  async function toggleFabPin(credId) {
+    const host = fabHost();
+    if (!pinnedByUrl[host]) pinnedByUrl[host] = new Set();
+    if (pinnedByUrl[host].has(credId)) {
+      pinnedByUrl[host].delete(credId);
+    } else {
+      pinnedByUrl[host].add(credId);
+    }
+    await savePins();
+    renderPanel();
+  }
 
   const SVG_MOON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
   const SVG_SUN  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
@@ -105,7 +147,7 @@
 
     try {
       const s = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
-      fabPosition    = s.fabPosition || 'right-center';
+      fabPosition    = s.fabPosition || 'right-top';
       currentTheme   = s.theme || 'dark';
     } catch (_) {}
 
@@ -130,7 +172,7 @@
 
   function applyFabPosition() {
     if (!floatingBtn) return;
-    const [side, vert] = (fabPosition || 'right-center').split('-');
+    const [side, vert] = (fabPosition || 'right-top').split('-');
     floatingBtn.className = `dpv-fab-${side} dpv-fab-${vert}`;
   }
 
@@ -197,10 +239,18 @@
       empty.textContent = 'No saved credentials for this page.';
       list.appendChild(empty);
     } else {
-      credentials.forEach(cred => {
-        const item = createCredentialItem(cred);
-        list.appendChild(item);
-      });
+      const pinnedSet = pinnedByUrl[fabHost()] || new Set();
+      const pinned = credentials.filter(c => pinnedSet.has(c.id));
+      const rest   = credentials.filter(c => !pinnedSet.has(c.id));
+
+      if (pinned.length) {
+        list.appendChild(fabGroupHeader('⊛ Pinned'));
+        pinned.forEach(c => list.appendChild(createCredentialItem(c)));
+      }
+      if (rest.length) {
+        if (pinned.length) list.appendChild(fabGroupHeader('Others'));
+        rest.forEach(c => list.appendChild(createCredentialItem(c)));
+      }
     }
 
     panel.appendChild(list);
@@ -224,7 +274,10 @@
     const item = document.createElement('div');
     item.className = 'dpv-item';
 
+    const pinned = isFabPinned(cred.id);
+    const pinSvg = `<svg viewBox="0 0 24 24" width="12" height="12" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
     const noteIcon = cred.notes ? ' 📝' : '';
+
     item.innerHTML = `
       <div class="dpv-item-info">
         <span class="dpv-item-label">${escHtml(cred.label || cred.username)}${noteIcon}</span>
@@ -232,16 +285,25 @@
         ${cred.tags?.length ? `<span class="dpv-tags">${cred.tags.map(t => `<span class="dpv-tag">${escHtml(t)}</span>`).join('')}</span>` : ''}
       </div>
       <div class="dpv-item-btns">
+        <button class="dpv-pin-btn${pinned ? ' active' : ''}" title="${pinned ? 'Unpin' : 'Pin to top'}">${pinSvg}</button>
         <button class="dpv-btn dpv-fill-btn" title="Fill form">Fill</button>
         <button class="dpv-btn dpv-submit-btn" title="Fill &amp; Submit">Fill+Go</button>
         <button class="dpv-btn dpv-edit-btn" title="Edit">✎</button>
       </div>`;
 
+    item.querySelector('.dpv-pin-btn').addEventListener('click', () => toggleFabPin(cred.id));
     item.querySelector('.dpv-fill-btn').addEventListener('click', () => fillCredential(cred, false));
     item.querySelector('.dpv-submit-btn').addEventListener('click', () => fillCredential(cred, true));
     item.querySelector('.dpv-edit-btn').addEventListener('click', () => openCredDialog(cred));
 
     return item;
+  }
+
+  function fabGroupHeader(text) {
+    const h = document.createElement('div');
+    h.className = 'dpv-group-header';
+    h.textContent = text;
+    return h;
   }
 
   function positionPanel() {
@@ -257,7 +319,7 @@
     if (top < window.scrollY + 8) top = window.scrollY + 8;
 
     panel.style.top = `${top}px`;
-    const side = (fabPosition || 'right-center').split('-')[0];
+    const side = (fabPosition || 'right-top').split('-')[0];
     if (side === 'left') {
       panel.style.left  = `${fabRect.right + 8}px`;
       panel.style.right = 'auto';
@@ -403,6 +465,7 @@
     } catch {
       credentials = [];
     }
+    await loadPins();
     updateBadge();
     return credentials;
   }

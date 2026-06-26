@@ -5,6 +5,61 @@ let currentUrl = '';
 let currentTheme = 'dark';
 let editingCredId = null; // null = add mode, string = edit mode
 
+const PINS_KEY = 'dpv_pins';
+let pinnedByUrl = {}; // { hostname: Set<credId> }
+
+async function loadPins() {
+  const result = await chrome.storage.local.get(PINS_KEY);
+  const raw = result[PINS_KEY] || {};
+  pinnedByUrl = {};
+  for (const [h, ids] of Object.entries(raw)) {
+    pinnedByUrl[h] = new Set(ids);
+  }
+}
+
+async function savePins() {
+  const raw = {};
+  for (const [h, set] of Object.entries(pinnedByUrl)) {
+    if (set.size > 0) raw[h] = [...set];
+  }
+  await chrome.storage.local.set({ [PINS_KEY]: raw });
+}
+
+function currentHostname() {
+  if (!currentUrl) return null;
+  try {
+    const u = new URL(currentUrl);
+    return u.port ? `${u.hostname}:${u.port}` : u.hostname;
+  } catch { return null; }
+}
+
+function isPinned(credId) {
+  const host = currentHostname();
+  return host ? (pinnedByUrl[host]?.has(credId) || false) : false;
+}
+
+async function togglePin(credId) {
+  const host = currentHostname();
+  if (!host) return;
+  if (!pinnedByUrl[host]) pinnedByUrl[host] = new Set();
+  if (pinnedByUrl[host].has(credId)) {
+    pinnedByUrl[host].delete(credId);
+  } else {
+    pinnedByUrl[host].add(credId);
+  }
+  await savePins();
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = q
+    ? allCreds.filter(c =>
+        c.label?.toLowerCase().includes(q) ||
+        c.username?.toLowerCase().includes(q) ||
+        c.tags?.some(t => t.toLowerCase().includes(q)) ||
+        c.urlRules?.some(r => r.pattern?.toLowerCase().includes(q))
+      )
+    : allCreds;
+  render(filtered);
+}
+
 // ── Theme ──────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
   currentTheme = theme;
@@ -44,6 +99,7 @@ async function init() {
     row.classList.remove('hidden');
   }
 
+  await loadPins();
   render(allCreds);
 
   document.getElementById('search').addEventListener('input', onSearch);
@@ -236,24 +292,41 @@ function render(creds) {
     return;
   }
 
-  const matching = currentUrl
-    ? creds.filter(c => c.urlRules?.some(r => matchesRule(currentUrl, r)))
-    : [];
-  const rest = creds.filter(c => !matching.includes(c));
+  const host = currentHostname();
+  const pinnedSet = host ? (pinnedByUrl[host] || new Set()) : new Set();
 
-  if (matching.length && rest.length) {
+  const pinned   = creds.filter(c => pinnedSet.has(c.id));
+  const pinnedIds = new Set(pinned.map(c => c.id));
+
+  const matching = currentUrl
+    ? creds.filter(c => !pinnedIds.has(c.id) && c.urlRules?.some(r => matchesRule(currentUrl, r)))
+    : [];
+  const matchingIds = new Set(matching.map(c => c.id));
+
+  const rest = creds.filter(c => !pinnedIds.has(c.id) && !matchingIds.has(c.id));
+
+  if (pinned.length) {
+    list.appendChild(groupHeader('⊛ Pinned'));
+    pinned.forEach(c => list.appendChild(credItem(c, currentUrl ? (c.urlRules?.some(r => matchesRule(currentUrl, r)) || false) : false)));
+    const others = [...matching, ...rest];
+    if (others.length) {
+      list.appendChild(groupHeader('Others'));
+      others.forEach(c => list.appendChild(credItem(c, matchingIds.has(c.id))));
+    }
+  } else if (matching.length && rest.length) {
     list.appendChild(groupHeader(`This page (${matching.length})`));
     matching.forEach(c => list.appendChild(credItem(c, true)));
     list.appendChild(groupHeader(`All (${rest.length})`));
     rest.forEach(c => list.appendChild(credItem(c, false)));
   } else {
-    creds.forEach(c => list.appendChild(credItem(c, matching.includes(c))));
+    [...matching, ...rest].forEach(c => list.appendChild(credItem(c, matchingIds.has(c.id))));
   }
 }
 
 function credItem(cred, isMatch) {
   const div = document.createElement('div');
-  div.className = `cred-item${isMatch ? ' cred-match' : ''}`;
+  const pinned = isPinned(cred.id);
+  div.className = `cred-item${isMatch ? ' cred-match' : ''}${pinned ? ' cred-pinned' : ''}`;
 
   const tags = cred.tags?.length
     ? cred.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')
@@ -263,6 +336,11 @@ function credItem(cred, isMatch) {
     ? `<span class="note-dot" title="${esc(cred.notes)}">📝</span>`
     : '';
 
+  const hasHost = !!currentHostname();
+  const pinBtn = hasHost
+    ? `<button class="btn-pin${pinned ? ' active' : ''}" title="${pinned ? 'Unpin' : 'Pin to top for this site'}"><svg viewBox="0 0 24 24" width="12" height="12" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>`
+    : '';
+
   div.innerHTML = `
     <div class="cred-info">
       <div class="cred-label">${esc(cred.label || cred.username)} ${noteIcon}</div>
@@ -270,12 +348,14 @@ function credItem(cred, isMatch) {
       ${tags ? `<div class="cred-tags">${tags}</div>` : ''}
     </div>
     <div class="cred-actions">
+      ${pinBtn}
       ${isMatch ? `<button class="btn btn-fill">Fill</button>` : ''}
       <button class="btn btn-edit">Edit</button>
     </div>`;
 
   div.querySelector('.btn-edit').addEventListener('click', () => openEditForm(cred.id));
   div.querySelector('.btn-fill')?.addEventListener('click', () => fillInTab(cred));
+  div.querySelector('.btn-pin')?.addEventListener('click', () => togglePin(cred.id));
 
   return div;
 }

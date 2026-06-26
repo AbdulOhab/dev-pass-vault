@@ -23,6 +23,9 @@ let allCreds = [];
 let activeCred = null;
 let searchQuery = '';
 let currentSettings = { savePromptPosition: 'top-right', theme: 'dark', autoDetectLogin: true };
+let selectionMode = false;
+let selectedIds = new Set();
+let filteredCreds = [];
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
@@ -74,6 +77,12 @@ async function init() {
   document.getElementById('new-btn').addEventListener('click', () => openEditor(null));
   document.getElementById('export-btn').addEventListener('click', doExport);
   document.getElementById('import-input').addEventListener('change', doImport);
+
+  document.getElementById('select-mode-btn').addEventListener('click', toggleSelectionMode);
+  document.getElementById('cancel-select-btn').addEventListener('click', toggleSelectionMode);
+  document.getElementById('select-all-btn').addEventListener('click', toggleSelectAll);
+  document.getElementById('bulk-delete-btn').addEventListener('click', bulkDelete);
+  document.getElementById('reset-all-btn').addEventListener('click', fullReset);
 }
 
 // ── Settings UI ────────────────────────────────────────────────────────────
@@ -101,7 +110,7 @@ function initSettingsUI(s) {
 
   // FAB position buttons
   document.querySelectorAll('.fab-pos-btn').forEach(btn => {
-    if (btn.dataset.fab === (s.fabPosition || 'right-center')) btn.classList.add('active');
+    if (btn.dataset.fab === (s.fabPosition || 'right-top')) btn.classList.add('active');
     else btn.classList.remove('active');
     btn.addEventListener('click', () => {
       document.querySelectorAll('.fab-pos-btn').forEach(b => b.classList.remove('active'));
@@ -122,7 +131,7 @@ function initSettingsUI(s) {
   document.getElementById('save-settings-btn').addEventListener('click', async () => {
     const theme       = document.querySelector('.theme-btn.active')?.dataset.theme || 'dark';
     const position    = document.querySelector('.pos-btn.active')?.dataset.pos || 'top-right';
-    const fabPosition = document.querySelector('.fab-pos-btn.active')?.dataset.fab || 'right-center';
+    const fabPosition = document.querySelector('.fab-pos-btn.active')?.dataset.fab || 'right-top';
     const auto        = document.getElementById('s-autodetect').checked;
 
     currentSettings = { theme, savePromptPosition: position, fabPosition, autoDetectLogin: auto };
@@ -135,12 +144,66 @@ function initSettingsUI(s) {
   });
 }
 
+// ── Selection ──────────────────────────────────────────────────────────────
+function toggleSelectionMode() {
+  selectionMode = !selectionMode;
+  selectedIds.clear();
+  document.getElementById('bulk-bar').classList.toggle('hidden', !selectionMode);
+  document.getElementById('select-mode-btn').classList.toggle('active', selectionMode);
+  renderList();
+  updateBulkBtn();
+}
+
+function updateBulkBtn() {
+  const btn = document.getElementById('bulk-delete-btn');
+  btn.textContent = `Delete (${selectedIds.size})`;
+  btn.disabled = selectedIds.size === 0;
+}
+
+function toggleSelectAll() {
+  const allSelected = filteredCreds.length > 0 && filteredCreds.every(c => selectedIds.has(c.id));
+  filteredCreds.forEach(c => allSelected ? selectedIds.delete(c.id) : selectedIds.add(c.id));
+  document.getElementById('select-all-btn').textContent = allSelected ? 'Select All' : 'Deselect All';
+  renderList();
+  updateBulkBtn();
+}
+
+async function bulkDelete() {
+  if (!selectedIds.size) return;
+  const n = selectedIds.size;
+  if (!confirm(`Delete ${n} credential${n > 1 ? 's' : ''}? This cannot be undone.`)) return;
+  allCreds = await msg({ type: 'BULK_DELETE', ids: [...selectedIds] });
+  selectedIds.clear();
+  selectionMode = false;
+  document.getElementById('bulk-bar').classList.add('hidden');
+  document.getElementById('select-mode-btn').classList.remove('active');
+  activeCred = null;
+  renderList();
+  updateStats();
+  document.getElementById('editor').innerHTML = '<div class="editor-empty"><p>Deleted.</p></div>';
+}
+
+async function fullReset() {
+  if (!confirm('Delete ALL credentials and pins? This cannot be undone.')) return;
+  if (!confirm('Second confirmation: permanently delete everything?')) return;
+  await msg({ type: 'RESET_ALL' });
+  allCreds = [];
+  activeCred = null;
+  selectionMode = false;
+  selectedIds.clear();
+  document.getElementById('bulk-bar').classList.add('hidden');
+  document.getElementById('select-mode-btn').classList.remove('active');
+  renderList();
+  updateStats();
+  document.getElementById('editor').innerHTML = '<div class="editor-empty"><p>All data has been reset.</p></div>';
+}
+
 // ── List ───────────────────────────────────────────────────────────────────
 function renderList() {
   const container = document.getElementById('cred-list');
   container.innerHTML = '';
 
-  const filtered = searchQuery
+  filteredCreds = searchQuery
     ? allCreds.filter(c =>
         c.label?.toLowerCase().includes(searchQuery) ||
         c.username?.toLowerCase().includes(searchQuery) ||
@@ -149,19 +212,42 @@ function renderList() {
       )
     : allCreds;
 
-  if (!filtered.length) {
+  if (!filteredCreds.length) {
     container.innerHTML = `<div class="list-empty">${searchQuery ? 'No matches' : 'No credentials yet'}</div>`;
     return;
   }
 
-  filtered.forEach(cred => {
+  filteredCreds.forEach(cred => {
     const el = document.createElement('div');
-    el.className = 'list-item' + (activeCred?.id === cred.id ? ' active' : '');
+    const isSelected = selectedIds.has(cred.id);
+    el.className = 'list-item'
+      + (activeCred?.id === cred.id && !selectionMode ? ' active' : '')
+      + (isSelected ? ' selected' : '');
+
     el.innerHTML = `
-      <div class="list-item-label">${esc(cred.label || cred.username)}</div>
-      <div class="list-item-user">${esc(cred.username)}</div>
-      ${cred.urlRules?.length ? `<div class="list-item-urls">${cred.urlRules.slice(0,2).map(r => `<span>${esc(r.pattern)}</span>`).join('')}${cred.urlRules.length > 2 ? `<span>+${cred.urlRules.length - 2}</span>` : ''}</div>` : ''}`;
-    el.addEventListener('click', () => openEditor(cred));
+      ${selectionMode ? '<input type="checkbox" class="list-item-check" />' : ''}
+      <div class="list-item-body">
+        <div class="list-item-label">${esc(cred.label || cred.username)}</div>
+        <div class="list-item-user">${esc(cred.username)}</div>
+        ${cred.urlRules?.length ? `<div class="list-item-urls">${cred.urlRules.slice(0,2).map(r => `<span>${esc(r.pattern)}</span>`).join('')}${cred.urlRules.length > 2 ? `<span>+${cred.urlRules.length - 2}</span>` : ''}</div>` : ''}
+      </div>`;
+
+    if (selectionMode) {
+      const cb = el.querySelector('.list-item-check');
+      cb.checked = isSelected;
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const next = !selectedIds.has(cred.id);
+        cb.checked = next;
+        if (next) selectedIds.add(cred.id);
+        else selectedIds.delete(cred.id);
+        el.classList.toggle('selected', next);
+        updateBulkBtn();
+      });
+    } else {
+      el.addEventListener('click', () => openEditor(cred));
+    }
+
     container.appendChild(el);
   });
 }
