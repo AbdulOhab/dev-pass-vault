@@ -199,6 +199,26 @@
   text-overflow: ellipsis;
 }
 
+/* Search box */
+.dpv-search-wrap {
+  padding: 6px 12px 4px;
+  flex-shrink: 0;
+}
+.dpv-search {
+  width: 100%;
+  padding: 7px 12px;
+  background: var(--dpv-bg2);
+  border: 1px solid var(--dpv-border2);
+  border-radius: 8px;
+  color: var(--dpv-text1);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.12s;
+  font-family: inherit;
+}
+.dpv-search:focus { border-color: var(--dpv-accent); }
+.dpv-search::placeholder { color: var(--dpv-text2); }
+
 /* Credential list */
 .dpv-list {
   flex: 1;

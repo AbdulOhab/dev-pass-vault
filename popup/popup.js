@@ -48,16 +48,23 @@ async function togglePin(credId) {
     pinnedByUrl[host].add(credId);
   }
   await savePins();
-  const q = document.getElementById('search').value.toLowerCase();
-  const filtered = q
-    ? allCreds.filter(c =>
-        c.label?.toLowerCase().includes(q) ||
-        c.username?.toLowerCase().includes(q) ||
-        c.tags?.some(t => t.toLowerCase().includes(q)) ||
-        c.urlRules?.some(r => r.pattern?.toLowerCase().includes(q))
-      )
-    : allCreds;
-  render(filtered);
+  renderFiltered();
+}
+
+// ── Filtering ────────────────────────────────────────────────────────────────
+function getFiltered() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  if (!q) return allCreds;
+  return allCreds.filter(c =>
+    c.label?.toLowerCase().includes(q) ||
+    c.username?.toLowerCase().includes(q) ||
+    c.tags?.some(t => t.toLowerCase().includes(q)) ||
+    c.urlRules?.some(r => r.pattern?.toLowerCase().includes(q))
+  );
+}
+
+function renderFiltered() {
+  render(getFiltered());
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────────
@@ -257,7 +264,7 @@ async function saveForm() {
   }});
 
   closeAddForm();
-  render(allCreds);
+  renderFiltered();
 }
 
 async function deleteCred() {
@@ -266,21 +273,12 @@ async function deleteCred() {
   if (!confirm(`Delete "${cred?.label || cred?.username}"?`)) return;
   allCreds = await msg({ type: 'DELETE', id: editingCredId });
   closeAddForm();
-  render(allCreds);
+  renderFiltered();
 }
 
 // ── Search & list ──────────────────────────────────────────────────────────
-function onSearch(e) {
-  const q = e.target.value.toLowerCase();
-  const filtered = q
-    ? allCreds.filter(c =>
-        c.label?.toLowerCase().includes(q) ||
-        c.username?.toLowerCase().includes(q) ||
-        c.tags?.some(t => t.toLowerCase().includes(q)) ||
-        c.urlRules?.some(r => r.pattern?.toLowerCase().includes(q))
-      )
-    : allCreds;
-  render(filtered);
+function onSearch() {
+  renderFiltered();
 }
 
 function render(creds) {

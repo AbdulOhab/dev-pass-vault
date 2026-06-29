@@ -11,6 +11,7 @@
   let fabPosition = 'right-top';
   let currentTheme = 'dark';
   let pinnedByUrl = {};
+  let panelSearch = '';
 
   const PINS_KEY = 'dpv_pins';
 
@@ -50,7 +51,7 @@
       pinnedByUrl[host].add(credId);
     }
     await savePins();
-    renderPanel();
+    renderList();
   }
 
   const SVG_MOON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
@@ -236,31 +237,23 @@
       <span class="dpv-url-proto">${location.protocol}//</span><span class="dpv-url-host">${hostname}</span>`;
     panel.appendChild(urlPill);
 
+    // Search box
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'dpv-search-wrap';
+    searchWrap.innerHTML = `<input type="text" class="dpv-search" placeholder="Search credentials…" />`;
+    const searchInput = searchWrap.querySelector('.dpv-search');
+    searchInput.value = panelSearch;
+    searchInput.addEventListener('input', () => {
+      panelSearch = searchInput.value;
+      renderList();
+    });
+    panel.appendChild(searchWrap);
+
     // Credential list
     const list = document.createElement('div');
     list.className = 'dpv-list';
-
-    if (credentials.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'dpv-empty';
-      empty.textContent = 'No saved credentials for this page.';
-      list.appendChild(empty);
-    } else {
-      const pinnedSet = pinnedByUrl[fabHost()] || new Set();
-      const pinned = credentials.filter(c => pinnedSet.has(c.id));
-      const rest   = credentials.filter(c => !pinnedSet.has(c.id));
-
-      if (pinned.length) {
-        list.appendChild(fabGroupHeader('⊛ Pinned'));
-        pinned.forEach(c => list.appendChild(createCredentialItem(c)));
-      }
-      if (rest.length) {
-        if (pinned.length) list.appendChild(fabGroupHeader('Others'));
-        rest.forEach(c => list.appendChild(createCredentialItem(c)));
-      }
-    }
-
     panel.appendChild(list);
+    renderList();
 
     // Footer
     const footer = document.createElement('div');
@@ -275,6 +268,48 @@
     document.body.appendChild(panel);
     applyThemeToEl(panel);
     positionPanel();
+  }
+
+  function matchesSearch(cred, q) {
+    if (!q) return true;
+    return (
+      cred.label?.toLowerCase().includes(q) ||
+      cred.username?.toLowerCase().includes(q) ||
+      cred.tags?.some(t => t.toLowerCase().includes(q)) ||
+      cred.urlRules?.some(r => r.pattern?.toLowerCase().includes(q))
+    );
+  }
+
+  function renderList() {
+    const list = panel?.querySelector('.dpv-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    const q = panelSearch.trim().toLowerCase();
+    const matched = credentials.filter(c => matchesSearch(c, q));
+
+    if (matched.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'dpv-empty';
+      empty.textContent = credentials.length === 0
+        ? 'No saved credentials for this page.'
+        : 'No credentials match your search.';
+      list.appendChild(empty);
+      return;
+    }
+
+    const pinnedSet = pinnedByUrl[fabHost()] || new Set();
+    const pinned = matched.filter(c => pinnedSet.has(c.id));
+    const rest   = matched.filter(c => !pinnedSet.has(c.id));
+
+    if (pinned.length) {
+      list.appendChild(fabGroupHeader('⊛ Pinned'));
+      pinned.forEach(c => list.appendChild(createCredentialItem(c)));
+    }
+    if (rest.length) {
+      if (pinned.length) list.appendChild(fabGroupHeader('Others'));
+      rest.forEach(c => list.appendChild(createCredentialItem(c)));
+    }
   }
 
   function createCredentialItem(cred) {
@@ -340,6 +375,7 @@
     clearTimeout(leaveTimer);
     panel?.remove();
     panel = null;
+    panelSearch = '';
   }
 
   function scheduleClose() {
